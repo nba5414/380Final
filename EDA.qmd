@@ -1,62 +1,75 @@
 ---
-title: "EDA"
+title: "Final Report"
 format: pdf
 editor: visual
 authors: Nicholas Allen, Surya Maddali, Jake Adams
 ---
 
-
 # Introduction:
-In recent decades, cell phones have become a hot commodity around the world.  The idea of calling with the tips of your fingers was a revolutionary idea that continues to set the standard for telecommunications.  With advancements to cell phones, one question that is always present is pricing  There may be certain factors that affect cell phone pricing such as storage, camera capabilities, and battery power.  The goal of this project is to assess that, seeing if certain features of phones affect pricing in a significant way.  It is an interesting and important question to answer because it can inform others about what phone features matter the most to companies that make phones as well as inform us about what features matter the most to a phone’s functionality when looking to buy one.  Machine learning is a reasonable approach to tackle this question because it can give us insight into why or how phones are purchased.  Moreover, it can help us predict phone prices in the future based on what features they possess, which would be informed by past data on this exact matter.  In other words, it would help readers assess what features are continuing to affect the price of the phone the most in the present.
+
+In recent decades, cell phones have become a hot commodity around the world. The idea of calling with the tips of your fingers was a revolutionary idea that continues to set the standard for telecommunications. With advancements to cell phones, one question that is always present is pricing There may be certain factors that affect cell phone pricing such as storage, camera capabilities, and battery power. The goal of this project is to assess that, seeing if certain features of phones affect pricing in a significant way. It is an interesting and important question to answer because it can inform others about what phone features matter the most to companies that make phones as well as inform us about what features matter the most to a phone's functionality when looking to buy one. Machine learning is a reasonable approach to tackle this question because it can give us insight into why or how phones are purchased. Moreover, it can help us predict phone prices in the future based on what features they possess, which would be informed by past data on this exact matter. In other words, it would help readers assess what features are continuing to affect the price of the phone the most in the present.
 
 # Illustration:
+
 ![Elephant](380_Final_Chart_PNG.png)
 
-
 # Background and Related Works:
-We looked at an article from IEEE Xplore.  This article was about predicting mobile phone prices using a data set from kaggle.  This article differed from ours because they were predicting phone prices with classification.  They had their y variable in as a factor with 4 levels.  The levels were form "low cost" to "very high cost".  Some examples of their x variables were battery power and clock speed.  They used several different models to predict phone price such as a decision tree and SVM.  Their most accurate model was SVM with an accuracy of 94.8%.
 
-Reference:
-N. Hu, "Classification of Mobile Phone Price Dataset Using Machine Learning Algorithms," 2022 3rd International Conference on Pattern Recognition and Machine Learning (PRML), Chengdu, China, 2022, pp. 438-443, doi: 10.1109/PRML56267.2022.9882236.
-keywords: {Support vector machines;Machine learning algorithms;Random access memory;Machine learning;Feature extraction;Mobile handsets;Batteries;computer science;machine learning;classification;price prediction},
+We looked at an article from IEEE Xplore. This article was about predicting mobile phone prices using a data set from kaggle. This article differed from ours because they were predicting phone prices with classification. They had their y variable in as a factor with 4 levels. The levels were form "low cost" to "very high cost". Some examples of their x variables were battery power and clock speed. They used several different models to predict phone price such as a decision tree and SVM. Their most accurate model was SVM with an accuracy of 94.8%.
+
+Reference: N. Hu, "Classification of Mobile Phone Price Dataset Using Machine Learning Algorithms," 2022 3rd International Conference on Pattern Recognition and Machine Learning (PRML), Chengdu, China, 2022, pp. 438-443, doi: 10.1109/PRML56267.2022.9882236. keywords: {Support vector machines;Machine learning algorithms;Random access memory;Machine learning;Feature extraction;Mobile handsets;Batteries;computer science;machine learning;classification;price prediction},
 
 # Data Processing:
+
 We loaded in the data sets though the readxl package
+
 ```{r}
 library(readxl)
 library(tidyverse)
+library(corrplot)
+library(torch)
+library(luz)
+library(dplyr)
+library(broom)
+library(purrr)
+library(caret)
+library(tibble)
+
+
 
 df <- read_excel('smartphones_-_smartphones.xlsx')
 df2 <- read_csv('Sales.csv')
 ```
 
-
-
 ## First Dataset
+
 The first data set looked like this before processing.
+
 ```{r}
 head(df)
 ```
-It is a tabular data set on some mobile phones.  Some examples of columns in the data set are mobile which represents the name of the phone and the price of the phone.
 
+It is a tabular data set on some mobile phones. Some examples of columns in the data set are mobile which represents the name of the phone and the price of the phone.
 
-To start off we took out the model column because it represented the names of the phones which will not impact the price.  We also took out the sim column.
+To start off we took out the model column because it represented the names of the phones which will not impact the price. We also took out the sim column.
+
 ```{r}
 df <- df %>% drop_na() %>% select(!model) %>% select(!sim)
 ```
 
-
-
 ### Cleaning battery column
+
 We extracted the battery life of each phone in mAH and made the column numeric
+
 ```{r}
 df <- df %>% 
   mutate(battery = gsub(pattern = "mAh Battery|with|(?:[0-9]){1,3}W|Fast Charging", replacement = "", battery)) %>% mutate_at('battery', as.numeric) %>% drop_na() %>% rename('battery_mAh'='battery')
 ```
 
-
 ### Cleaning processor variable
-We extracted the power of the processor in GHz.  We then made the column numeric
+
+We extracted the power of the processor in GHz. We then made the column numeric
+
 ```{r}
 df$processor <- str_extract(df$processor, "\\d+\\.?\\d*\\s*GHz|\\d+\\s*GHz")
 
@@ -65,9 +78,10 @@ df$processor <- gsub("GHz", "", df$processor)
 df <- df %>% drop_na() %>% mutate_at('processor', as.numeric) %>%rename('processor GHz)'='processor')
 ```
 
-
 ### Cleaning os column
-We noticed that because the data was unclean, some of the values that should be in the os column were in the card column.  We put these value in the os column and removed the card column after.  We also made the os column a factor.
+
+We noticed that because the data was unclean, some of the values that should be in the os column were in the card column. We put these value in the os column and removed the card column after. We also made the os column a factor.
+
 ```{r}
 for (i in 1:nrow(df)){
   if (df[i,9] == 'No FM Radio'){
@@ -81,29 +95,29 @@ for (i in 1:nrow(df)){
 df <- df %>% select(!card) %>% mutate_at('os', as.factor)  
 ```
 
-
-
 ### Cleaning camera column
-We extracted the amount of mega pixels in the front camera of each phone.  We made this column numeric
+
+We extracted the amount of mega pixels in the front camera of each phone. We made this column numeric
+
 ```{r}
 df$camera <- str_extract(df$camera, '[0-9]{1,2} MP Front Camera')
 df$camera <- str_extract(df$camera, '[0-9]{1,2}')
 df <- df %>% mutate_at('camera', as.numeric) %>% rename('f_camera_MP'='camera') %>% drop_na()
 ```
 
-
-
 ### Cleaning ram column
+
 We extracted the ram of the phones in GB and made it a factor because phones only have a few preset values for their ram
+
 ```{r}
 df$ram <- str_extract(df$ram, '[0-9]{1,2} GB')
 df <- df %>% mutate_at('ram', as.factor) 
 ```
 
-
-
 ### Cleaning Display column
-We extracted the display size and the Hz of the display and turned that into two new columns.  We made these new columns numeric and removed the original 
+
+We extracted the display size and the Hz of the display and turned that into two new columns. We made these new columns numeric and removed the original
+
 ```{r}
 df <- df %>% mutate(displaySize = as.numeric(str_extract(df$display, "\\b\\d+\\.\\d+\\b")))
 ```
@@ -114,10 +128,10 @@ df <- df %>% mutate(displayHz = as.numeric(str_extract(df$display, "\\b\\d+(?=\\
 df <- df %>% select(!display)
 ```
 
-
-
 ### Cleaning Price column
+
 We converted the value in rupees to dollars to make it easier to understand for our audience
+
 ```{r}
 df <- df %>%
   mutate(price = gsub(",", "", price))
@@ -128,10 +142,10 @@ df <- df %>%
   mutate(price = round(price / 83.41, digits = 2)) %>% rename('price'='price') %>% drop_na()
 ```
 
-
-
 ### General Analysis
+
 After Cleaning:
+
 ```{r}
 head(df)
 ```
@@ -139,7 +153,6 @@ head(df)
 ```{r}
 summary(df)
 ```
-
 
 ```{r}
 library(corrplot)
@@ -152,18 +165,20 @@ correlation_matrix <- cor(numeric_data)
 corrplot(correlation_matrix, method = "circle")
 ```
 
-
-
 ## Second Dataset
+
 The first dataset looked like this before processing
+
 ```{r}
 head(df2)
 ```
-It is also a tabular data set with information on mobile phones.  This data set differs from the first because it has less columns that are useful for predicting price but it has more rows. 
 
+It is also a tabular data set with information on mobile phones. This data set differs from the first because it has less columns that are useful for predicting price but it has more rows.
 
 ### Cleaning P1
-To start we removed unneeded columns.  These were models, Camera, selling price, mobile, discount, and discount percentage.  We then make all the column names lowercase.  We then made all the data in the colors and brands columns lowercase.  We then removed the underscore from the original_price column name.  We then converted the price to dollars.  We them made the memory, brands, and storage columns factors.
+
+To start we removed unneeded columns. These were models, Camera, selling price, mobile, discount, and discount percentage. We then make all the column names lowercase. We then made all the data in the colors and brands columns lowercase. We then removed the underscore from the original_price column name. We then converted the price to dollars. We them made the memory, brands, and storage columns factors.
+
 ```{r}
 df2 <- df2 %>% drop_na()
 
@@ -185,9 +200,10 @@ df2$brands <- as.factor(df2$brands)
 
 ```
 
-
 ### General Analysis
+
 After cleaning:
+
 ```{r}
 head(df2)
 ```
@@ -195,7 +211,6 @@ head(df2)
 ```{r}
 summary(df2)
 ```
-
 
 ```{r}
 numeric_data2 <- df %>%
@@ -205,6 +220,7 @@ corrplot(correlation_matrix2, method = "circle")
 ```
 
 
+<<<<<<< HEAD
 ```{r}
 rmse <- function(y, yhat) {
 sqrt(mean((y - yhat)^2))
@@ -242,6 +258,106 @@ rmse(df_test$price, predict(model2, newdata=df_test))
 
 
 
+=======
+### Model Creation: Predicting Price
+
+To start with our introductory model, we have decided on a multi-linear regression model. This will set a foundation for the model complex models all predicting price. In the future, we plan to extend apon this will stepwise regression, pca analyis, and a neural network. 
+
+Split Test and Train Data: 
+```{r}
+set.seed(42)
+test_ind <- sample(
+  1:nrow(df),
+  floor(nrow(df)/10),
+  replace = FALSE
+)
+
+df_test1 <- df[-test_ind,]
+df_train1 <- df[test_ind,]
+
+set.seed(42)
+test_ind2 <- sample(
+  1:nrow(df2),
+  floor(nrow(df2)/10),
+  replace = FALSE
+)
+
+df_test2 <- df2[-test_ind2,]
+df_train2 <- df2[test_ind2,]
+
+
+```
+
+
+Fit Two Linear Regression Models:
+```{r}
+lm_fit <- lm(price ~ ., data = df_train1)
+lm_fit2 <- lm(original_price ~ ., data = df_train2)
+
+summary1 <- summary(lm_fit)
+summary2 <- summary(lm_fit2)
+
+```
+
+Summary of Models: 
+```{r}
+print(summary1)
+print(summary2)
+```
+
+Initial Thoughts: 
+
+We would expect to see price increase as the newer specs for phones are released and are put onto the market. Thus, we would expect things like memory, storage, ram, and other specs to be significant predictors for both of our data sets. As we can see this is the came. 
+
+One noteworthy observation we noticed in both models in the high level of Adjusted R-Squared. This can indicate over fitting, or it can indicate an accurate model. This will need to be verified on the test data with some prediction  tests after our interpretations. 
+
+Interpreting our coefficients: 
+
+For the first model, 
+
+Intercept: When all other predictor variables are zero, the estimated price of the product is approximately $2815.19.
+
+Rating: For every one-unit increase in the rating, the price is estimated to increase by approximately $12.85, holding all other variables constant.
+
+Processor(GHz): For every one-unit increase in the processor GHz, the price is estimated to increase by approximately $196.86, holding all other variables constant.
+
+RAM(3GB): Phones with 3GB of RAM are estimated to have a price decrease of approximately $187.53 compared to the reference category, holding all other variables constant.
+
+RAM(4GB): Phones with 4GB of RAM are estimated to have a price decrease of approximately $278.32 compared to the reference category, holding all other variables constant.
+
+RAM(6GB): Phones with 6GB of RAM are estimated to have a price decrease of approximately $301.17compared to the reference category, holding all other variables constant.
+
+Ram(8GB): Phones with 6GB of RAM are estimated to have a price decrease of approximately $303.66 compared to the reference category, holding all other variables constant.
+
+Battery(mAH): For every one-unit increase in battery mAh, the price is estimated to decrease by approximately $0.08, holding all other variables constant.
+
+Camera(MP):  For every one-unit increase in front camera megapixels, the price is estimated to decrease by approximately $6.09, holding all other variables constant.
+
+Operating System: Devices with Android v12, Android v13, and iOS v15 are estimated to have price changes of approximately $9.51, $147.47, and $1112.30 respectively, compared to the reference category, holding all other variables constant
+
+Display size: For every one-unit increase in display size, the price is estimated to decrease by approximately $559.89, holding all other variables constant.
+
+Display Hz: For every one-unit increase in display size, the price is estimated to decrease by approximately $3.60, holding all other variables constant.
+
+For the second model, 
+
+Brands: Devices that are of the brand asus, gionee, google pizel, htc, infinix, lenovo, lg, motorola, nokia, oppo, poco, realme, samsung, vivo, and xiaomi are estimated to have a price change of -242.481, -278.482, 75.979, -52.191, -385.898,-238.922, -187.752, -85.359, -149.821, -336.123, -455.377, -406.886, -173.599, -334.536, and -352.494 respectively, compared to the reference category, holding all other variables constant. 
+
+Memory: Devices that have the memory, 1.5GB, 10MB, 12GB, 16MB, 2GB, 3GB, 4GB, 4MB, 4GB, 4MB, 4GB, 512 MB, 6 GB, 64 MB, and 8 MB are estimated to have a price change of 76.64, -9.77, 77.44, -1467.04, -51.39, -50.81, -76.47, -9.61, 389.97, 38.11, 67.62, -1459.80, and 68.89 respectively, compared to the reference category, holding all other variables constant.  
+
+Storage: Devices that have the storage, 128 GB, 16GB, 16MB, 2MB, 256GB, 32GB, 4GB, 4MB, 512GB, 64GB, and 8GB are estimated to have a price change of -1133.22, -1325.12, -62.46, -1520.39, -881.32, -1232.93, -1425.61, -1528.50, -428.66, -1131.69, and -1377.18 respectively, compared to the reference category, holding all other variables constant. 
+
+Rating: For every one-unit increase in rating, the price is estimated to increase by approximately $119.62, holding all other variables constant.
+
+Accuracy of our models:
+
+```{r}
+prediction_lmfit1 <- predict(lm_fit, newdata = df_test1)
+prediction_lmfit2 <- predict(lm_fit2, newdata = df_test2)
+print(prediction_lmfit1)
+print(prediction_lmfit2)
+```
+>>>>>>> 1d9e993dbc442eefe19f6472cd754c0f1dfc5ad9
 
 
 
