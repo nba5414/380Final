@@ -51,7 +51,7 @@ df <- df %>% drop_na() %>% select(!model) %>% select(!sim)
 We extracted the battery life of each phone in mAH and made the column numeric
 ```{r}
 df <- df %>% 
-  mutate(battery = gsub(pattern = "mAh Battery|with|(?:[0-9]){1,3}W|Fast Charging", replacement = "", battery)) %>% mutate_at('battery', as.numeric) %>% drop_na() %>% rename('battery mAh'='battery')
+  mutate(battery = gsub(pattern = "mAh Battery|with|(?:[0-9]){1,3}W|Fast Charging", replacement = "", battery)) %>% mutate_at('battery', as.numeric) %>% drop_na() %>% rename('battery_mAh'='battery')
 ```
 
 
@@ -88,7 +88,7 @@ We extracted the amount of mega pixels in the front camera of each phone.  We ma
 ```{r}
 df$camera <- str_extract(df$camera, '[0-9]{1,2} MP Front Camera')
 df$camera <- str_extract(df$camera, '[0-9]{1,2}')
-df <- df %>% mutate_at('camera', as.numeric) %>% rename('f camera MP'='camera') %>% drop_na()
+df <- df %>% mutate_at('camera', as.numeric) %>% rename('f_camera_MP'='camera') %>% drop_na()
 ```
 
 
@@ -125,7 +125,7 @@ df$price <- sub("\\₹", "", df$price)
 df$price <- as.numeric(df$price)
 
 df <- df %>%
-  mutate(price = round(price / 83.41, digits = 2)) %>% rename('price $'='price') %>% drop_na()
+  mutate(price = round(price / 83.41, digits = 2)) %>% rename('price'='price') %>% drop_na()
 ```
 
 
@@ -204,6 +204,40 @@ correlation_matrix2 <- cor(numeric_data2)
 corrplot(correlation_matrix2, method = "circle")
 ```
 
+
+```{r}
+rmse <- function(y, yhat) {
+sqrt(mean((y - yhat)^2))
+}
+```
+
+
+
+
+
+
+```{r}
+set.seed(40)
+test_ind <- sample(1:nrow(df),floor(nrow(df)/5),replace=FALSE)
+df_train <- df[-test_ind,]
+df_test <- df[test_ind,]
+```
+
+```{r}
+model1 <- lm(price ~ ., data=df_train)
+rmse(df_test$price, predict(model1, newdata=df_test))
+```
+
+```{r}
+null_model <- lm(price ~ 1, df_train)
+model2 <- step(null_model, direction = 'forward',scope = formula(model1))
+
+```
+
+
+```{r}
+rmse(df_test$price, predict(model2, newdata=df_test))
+```
 
 
 
