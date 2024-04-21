@@ -220,7 +220,7 @@ corrplot(correlation_matrix2, method = "circle")
 ```
 
 
-<<<<<<< HEAD
+
 ```{r}
 rmse <- function(y, yhat) {
 sqrt(mean((y - yhat)^2))
@@ -229,31 +229,6 @@ sqrt(mean((y - yhat)^2))
 
 
 
-
-
-
-```{r}
-set.seed(40)
-test_ind <- sample(1:nrow(df),floor(nrow(df)/5),replace=FALSE)
-df_train <- df[-test_ind,]
-df_test <- df[test_ind,]
-```
-
-```{r}
-model1 <- lm(price ~ ., data=df_train)
-rmse(df_test$price, predict(model1, newdata=df_test))
-```
-
-```{r}
-null_model <- lm(price ~ 1, df_train)
-model2 <- step(null_model, direction = 'forward',scope = formula(model1))
-
-```
-
-
-```{r}
-rmse(df_test$price, predict(model2, newdata=df_test))
-```
 
 
 
@@ -357,8 +332,53 @@ prediction_lmfit2 <- predict(lm_fit2, newdata = df_test2)
 print(prediction_lmfit1)
 print(prediction_lmfit2)
 ```
->>>>>>> 1d9e993dbc442eefe19f6472cd754c0f1dfc5ad9
 
 
+
+
+
+Neural Network Model
+```{r}
+
+nn_model <- nn_module(
+  initialize = function(p, q1, q2, q3){
+    self$hidden1 <- nn_linear(p,q1)
+    self$hidden2 <- nn_linear(q1, q2)
+    self$hidden3 <- nn_linear(q2,q3)
+    self$output <- nn_linear(q3,1)
+    self$activation <- nn_relu()
+  },
+  forward = function(x){
+    x %>%
+      self$hidden1() %>% self$activation() %>%
+      self$hidden2() %>% self$activation() %>%
+      self$hidden3() %>% self$activation() %>%
+      self$output()
+  }
+)
+
+```
+Fit
+```{r}
+
+M <- model.matrix(price ~ 0 + . , data = df_train)
+```
+
+```{r}
+fit_nn <- nn_model %>% 
+    setup(loss = nn_mse_loss(),
+        optimizer = optim_adam, 
+        metrics = list(luz_metric_accuracy())) %>%
+    set_hparams(p = ncol(M), q1 = 16, q2 = 32, q3 = 16) %>%
+    set_opt_hparams(lr = 0.005) %>%
+    fit(data = list(
+        model.matrix(price ~ 0 + ., data = df_train), df_train %>% select(price) %>% as.matrix
+    ),
+        valid_data = list(
+        model.matrix(price ~ 0 + ., data = df_test), df_test %>% select(price) %>% as.matrix
+
+        ),
+        epochs = 50, verbose = TRUE)
+```
 
 
