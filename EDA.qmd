@@ -9,8 +9,8 @@ authors: Nicholas Allen, Surya Maddali, Jake Adams
 # Introduction:
 In recent decades, cell phones have become a hot commodity around the world.  The idea of calling with the tips of your fingers was a revolutionary idea that continues to set the standard for telecommunications.  With advancements to cell phones, one question that is always present is pricing  There may be certain factors that affect cell phone pricing such as storage, camera capabilities, and battery power.  The goal of this project is to assess that, seeing if certain features of phones affect pricing in a significant way.  It is an interesting and important question to answer because it can inform others about what phone features matter the most to companies that make phones as well as inform us about what features matter the most to a phone’s functionality when looking to buy one.  Machine learning is a reasonable approach to tackle this question because it can give us insight into why or how phones are purchased.  Moreover, it can help us predict phone prices in the future based on what features they possess, which would be informed by past data on this exact matter.  In other words, it would help readers assess what features are continuing to affect the price of the phone the most in the present.
 
-# Illistration:
-![Elephant](.png)
+# Illustration:
+![Elephant](380_Final_Chart_PNG.png)
 
 
 # Background and Related Works:
@@ -141,6 +141,18 @@ summary(df)
 ```
 
 
+```{r}
+library(corrplot)
+
+numeric_data <- df2 %>%
+  select_if(is.numeric) %>% drop_na()
+
+correlation_matrix <- cor(numeric_data)
+
+corrplot(correlation_matrix, method = "circle")
+```
+
+
 
 ## Second Dataset
 The first dataset looked like this before processing
@@ -183,6 +195,15 @@ head(df2)
 ```{r}
 summary(df2)
 ```
+
+
+```{r}
+numeric_data2 <- df %>%
+  select_if(is.numeric)
+correlation_matrix2 <- cor(numeric_data2)
+corrplot(correlation_matrix2, method = "circle")
+```
+
 
 
 
