@@ -229,45 +229,19 @@ sqrt(mean((y - yhat)^2))
 
 
 
-
-
-
-
 =======
 ### Model Creation: Predicting Price
 
 To start with our introductory model, we have decided on a multi-linear regression model. This will set a foundation for the model complex models all predicting price. In the future, we plan to extend apon this will stepwise regression, pca analyis, and a neural network. 
 
 Split Test and Train Data: 
-```{r}
-set.seed(42)
-test_ind <- sample(
-  1:nrow(df),
-  floor(nrow(df)/10),
-  replace = FALSE
-)
 
-df_test1 <- df[-test_ind,]
-df_train1 <- df[test_ind,]
-
-set.seed(42)
-test_ind2 <- sample(
-  1:nrow(df2),
-  floor(nrow(df2)/10),
-  replace = FALSE
-)
-
-df_test2 <- df2[-test_ind2,]
-df_train2 <- df2[test_ind2,]
-
-
-```
 
 
 Fit Two Linear Regression Models:
 ```{r}
-lm_fit <- lm(price ~ ., data = df_train1)
-lm_fit2 <- lm(original_price ~ ., data = df_train2)
+lm_fit <- lm(price ~ ., data = df)
+lm_fit2 <- lm(original_price ~ ., data = df2)
 
 summary1 <- summary(lm_fit)
 summary2 <- summary(lm_fit2)
@@ -324,14 +298,7 @@ Storage: Devices that have the storage, 128 GB, 16GB, 16MB, 2MB, 256GB, 32GB, 4G
 
 Rating: For every one-unit increase in rating, the price is estimated to increase by approximately $119.62, holding all other variables constant.
 
-Accuracy of our models:
 
-```{r}
-prediction_lmfit1 <- predict(lm_fit, newdata = df_test1)
-prediction_lmfit2 <- predict(lm_fit2, newdata = df_test2)
-print(prediction_lmfit1)
-print(prediction_lmfit2)
-```
 
 
 
@@ -339,7 +306,6 @@ print(prediction_lmfit2)
 
 Neural Network Model
 ```{r}
-
 nn_model <- nn_module(
   initialize = function(p, q1, q2, q3){
     self$hidden1 <- nn_linear(p,q1)
@@ -358,27 +324,72 @@ nn_model <- nn_module(
 )
 
 ```
-Fit
-```{r}
 
-M <- model.matrix(price ~ 0 + . , data = df_train)
-```
+
 
 ```{r}
-fit_nn <- nn_model %>% 
+M <- model.matrix(price ~ 0 + . , data = df_train1)
+
+fit_nn1 <- nn_model %>% 
     setup(loss = nn_mse_loss(),
         optimizer = optim_adam, 
         metrics = list(luz_metric_accuracy())) %>%
     set_hparams(p = ncol(M), q1 = 16, q2 = 32, q3 = 16) %>%
     set_opt_hparams(lr = 0.005) %>%
     fit(data = list(
-        model.matrix(price ~ 0 + ., data = df_train), df_train %>% select(price) %>% as.matrix
+        model.matrix(price ~ 0 + ., data = df), df %>% select(price) %>% as.matrix
     ),
-        valid_data = list(
-        model.matrix(price ~ 0 + ., data = df_test), df_test %>% select(price) %>% as.matrix
-
-        ),
-        epochs = 50, verbose = TRUE)
+     epochs = 50, verbose = TRUE)
 ```
+
+
+
+```{r}
+library(glmnet)
+x <- data.matrix(df %>% select(!price))
+y <- df$price
+
+lasso1 <- cv.glmnet(x, y, alpha = 1)
+ridge1 <- cv.glmnet(x, y, alpha = 0)
+
+rmse(y, predict(lasso, x))
+rmse(y, predict(ridge, x))
+```
+
+
+```{r}
+par(mfrow=c(1, 2))
+plot(lasso)
+plot(ridge)
+```
+
+
+```{r}
+rmse(df$price, lm_fit$fitted.values)
+```
+
+```{r}
+null_model <- lm(price ~ 1, df)
+forward1 <- step(null_model, direction = 'forward', scope = formula(lm_fit))
+
+backward1 <- step(lm_fit, direction = 'backward')
+
+rmse(df$price, predict(forward))
+rmse(df$price, predict(backward))
+```
+
+
+
+
+```{r}
+rmse(df2$original_price, predict(lm_fit2))
+```
+
+```{r}
+
+```
+
+
+
 
 
