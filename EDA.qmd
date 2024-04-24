@@ -63,7 +63,7 @@ We extracted the battery life of each phone in mAH and made the column numeric
 
 ```{r}
 df <- df %>% 
-  mutate(battery = gsub(pattern = "mAh Battery|with|(?:[0-9]){1,3}W|Fast Charging", replacement = "", battery)) %>% mutate_at('battery', as.numeric) %>% drop_na() %>% rename('battery mAh'='battery')
+  mutate(battery = gsub(pattern = "mAh Battery|with|(?:[0-9]){1,3}W|Fast Charging", replacement = "", battery)) %>% mutate_at('battery', as.numeric) %>% drop_na() %>% rename('battery_mAh'='battery')
 ```
 
 ### Cleaning processor variable
@@ -102,7 +102,7 @@ We extracted the amount of mega pixels in the front camera of each phone. We mad
 ```{r}
 df$camera <- str_extract(df$camera, '[0-9]{1,2} MP Front Camera')
 df$camera <- str_extract(df$camera, '[0-9]{1,2}')
-df <- df %>% mutate_at('camera', as.numeric) %>% rename('f camera MP'='camera') %>% drop_na()
+df <- df %>% mutate_at('camera', as.numeric) %>% rename('f_camera_MP'='camera') %>% drop_na()
 ```
 
 ### Cleaning ram column
@@ -220,6 +220,20 @@ corrplot(correlation_matrix2, method = "circle")
 ```
 
 
+
+```{r}
+rmse <- function(y, yhat) {
+sqrt(mean((y - yhat)^2))
+}
+```
+
+
+
+
+
+
+
+=======
 ### Model Creation: Predicting Price
 
 To start with our introductory model, we have decided on a multi-linear regression model. This will set a foundation for the more complex models all predicting price. In the future, we plan to extend apon this will stepwise regression and a neural network. 
@@ -375,5 +389,51 @@ histogram(df2$original_price, main = "Boxplot of Continuous Variable(DF2)")
 
 ```
 
+
+
+
+Neural Network Model
+```{r}
+
+nn_model <- nn_module(
+  initialize = function(p, q1, q2, q3){
+    self$hidden1 <- nn_linear(p,q1)
+    self$hidden2 <- nn_linear(q1, q2)
+    self$hidden3 <- nn_linear(q2,q3)
+    self$output <- nn_linear(q3,1)
+    self$activation <- nn_relu()
+  },
+  forward = function(x){
+    x %>%
+      self$hidden1() %>% self$activation() %>%
+      self$hidden2() %>% self$activation() %>%
+      self$hidden3() %>% self$activation() %>%
+      self$output()
+  }
+)
+
+```
+Fit
+```{r}
+
+M <- model.matrix(price ~ 0 + . , data = df_train)
+```
+
+```{r}
+fit_nn <- nn_model %>% 
+    setup(loss = nn_mse_loss(),
+        optimizer = optim_adam, 
+        metrics = list(luz_metric_accuracy())) %>%
+    set_hparams(p = ncol(M), q1 = 16, q2 = 32, q3 = 16) %>%
+    set_opt_hparams(lr = 0.005) %>%
+    fit(data = list(
+        model.matrix(price ~ 0 + ., data = df_train), df_train %>% select(price) %>% as.matrix
+    ),
+        valid_data = list(
+        model.matrix(price ~ 0 + ., data = df_test), df_test %>% select(price) %>% as.matrix
+
+        ),
+        epochs = 50, verbose = TRUE)
+```
 
 
