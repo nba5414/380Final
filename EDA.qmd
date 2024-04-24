@@ -219,26 +219,20 @@ correlation_matrix2 <- cor(numeric_data2)
 corrplot(correlation_matrix2, method = "circle")
 ```
 
-
-
 ```{r}
 rmse <- function(y, yhat) {
 sqrt(mean((y - yhat)^2))
 }
 ```
 
+======= \### Model Creation: Predicting Price
 
+To start with our introductory model, we have decided on a multi-linear regression model. This will set a foundation for the model complex models all predicting price. In the future, we plan to extend apon this will stepwise regression, pca analyis, and a neural network.
 
-=======
-### Model Creation: Predicting Price
-
-To start with our introductory model, we have decided on a multi-linear regression model. This will set a foundation for the model complex models all predicting price. In the future, we plan to extend apon this will stepwise regression, pca analyis, and a neural network. 
-
-Split Test and Train Data: 
-
-
+Split Test and Train Data:
 
 Fit Two Linear Regression Models:
+
 ```{r}
 lm_fit <- lm(price ~ ., data = df)
 lm_fit2 <- lm(original_price ~ ., data = df2)
@@ -248,63 +242,59 @@ summary2 <- summary(lm_fit2)
 
 ```
 
-Summary of Models: 
+Summary of Models:
+
 ```{r}
 print(summary1)
 print(summary2)
 ```
 
-Initial Thoughts: 
+Initial Thoughts:
 
-We would expect to see price increase as the newer specs for phones are released and are put onto the market. Thus, we would expect things like memory, storage, ram, and other specs to be significant predictors for both of our data sets. As we can see this is the came. 
+We would expect to see price increase as the newer specs for phones are released and are put onto the market. Thus, we would expect things like memory, storage, ram, and other specs to be significant predictors for both of our data sets. As we can see this is the came.
 
-One noteworthy observation we noticed in both models in the high level of Adjusted R-Squared. This can indicate over fitting, or it can indicate an accurate model. This will need to be verified on the test data with some prediction  tests after our interpretations. 
+One noteworthy observation we noticed in both models in the high level of Adjusted R-Squared. This can indicate over fitting, or it can indicate an accurate model. This will need to be verified on the test data with some prediction tests after our interpretations.
 
-Interpreting our coefficients: 
+Interpreting our coefficients:
 
-For the first model, 
+For the first model,
 
-Intercept: When all other predictor variables are zero, the estimated price of the product is approximately $2815.19.
+Intercept: When all other predictor variables are zero, the estimated price of the product is approximately \$2815.19.
 
-Rating: For every one-unit increase in the rating, the price is estimated to increase by approximately $12.85, holding all other variables constant.
+Rating: For every one-unit increase in the rating, the price is estimated to increase by approximately \$12.85, holding all other variables constant.
 
-Processor(GHz): For every one-unit increase in the processor GHz, the price is estimated to increase by approximately $196.86, holding all other variables constant.
+Processor(GHz): For every one-unit increase in the processor GHz, the price is estimated to increase by approximately \$196.86, holding all other variables constant.
 
-RAM(3GB): Phones with 3GB of RAM are estimated to have a price decrease of approximately $187.53 compared to the reference category, holding all other variables constant.
+RAM(3GB): Phones with 3GB of RAM are estimated to have a price decrease of approximately \$187.53 compared to the reference category, holding all other variables constant.
 
-RAM(4GB): Phones with 4GB of RAM are estimated to have a price decrease of approximately $278.32 compared to the reference category, holding all other variables constant.
+RAM(4GB): Phones with 4GB of RAM are estimated to have a price decrease of approximately \$278.32 compared to the reference category, holding all other variables constant.
 
-RAM(6GB): Phones with 6GB of RAM are estimated to have a price decrease of approximately $301.17compared to the reference category, holding all other variables constant.
+RAM(6GB): Phones with 6GB of RAM are estimated to have a price decrease of approximately \$301.17compared to the reference category, holding all other variables constant.
 
-Ram(8GB): Phones with 6GB of RAM are estimated to have a price decrease of approximately $303.66 compared to the reference category, holding all other variables constant.
+Ram(8GB): Phones with 6GB of RAM are estimated to have a price decrease of approximately \$303.66 compared to the reference category, holding all other variables constant.
 
-Battery(mAH): For every one-unit increase in battery mAh, the price is estimated to decrease by approximately $0.08, holding all other variables constant.
+Battery(mAH): For every one-unit increase in battery mAh, the price is estimated to decrease by approximately \$0.08, holding all other variables constant.
 
-Camera(MP):  For every one-unit increase in front camera megapixels, the price is estimated to decrease by approximately $6.09, holding all other variables constant.
+Camera(MP): For every one-unit increase in front camera megapixels, the price is estimated to decrease by approximately \$6.09, holding all other variables constant.
 
-Operating System: Devices with Android v12, Android v13, and iOS v15 are estimated to have price changes of approximately $9.51, $147.47, and $1112.30 respectively, compared to the reference category, holding all other variables constant
+Operating System: Devices with Android v12, Android v13, and iOS v15 are estimated to have price changes of approximately \$9.51, \$147.47, and \$1112.30 respectively, compared to the reference category, holding all other variables constant
 
-Display size: For every one-unit increase in display size, the price is estimated to decrease by approximately $559.89, holding all other variables constant.
+Display size: For every one-unit increase in display size, the price is estimated to decrease by approximately \$559.89, holding all other variables constant.
 
-Display Hz: For every one-unit increase in display size, the price is estimated to decrease by approximately $3.60, holding all other variables constant.
+Display Hz: For every one-unit increase in display size, the price is estimated to decrease by approximately \$3.60, holding all other variables constant.
 
-For the second model, 
+For the second model,
 
-Brands: Devices that are of the brand asus, gionee, google pizel, htc, infinix, lenovo, lg, motorola, nokia, oppo, poco, realme, samsung, vivo, and xiaomi are estimated to have a price change of -242.481, -278.482, 75.979, -52.191, -385.898,-238.922, -187.752, -85.359, -149.821, -336.123, -455.377, -406.886, -173.599, -334.536, and -352.494 respectively, compared to the reference category, holding all other variables constant. 
+Brands: Devices that are of the brand asus, gionee, google pizel, htc, infinix, lenovo, lg, motorola, nokia, oppo, poco, realme, samsung, vivo, and xiaomi are estimated to have a price change of -242.481, -278.482, 75.979, -52.191, -385.898,-238.922, -187.752, -85.359, -149.821, -336.123, -455.377, -406.886, -173.599, -334.536, and -352.494 respectively, compared to the reference category, holding all other variables constant.
 
-Memory: Devices that have the memory, 1.5GB, 10MB, 12GB, 16MB, 2GB, 3GB, 4GB, 4MB, 4GB, 4MB, 4GB, 512 MB, 6 GB, 64 MB, and 8 MB are estimated to have a price change of 76.64, -9.77, 77.44, -1467.04, -51.39, -50.81, -76.47, -9.61, 389.97, 38.11, 67.62, -1459.80, and 68.89 respectively, compared to the reference category, holding all other variables constant.  
+Memory: Devices that have the memory, 1.5GB, 10MB, 12GB, 16MB, 2GB, 3GB, 4GB, 4MB, 4GB, 4MB, 4GB, 512 MB, 6 GB, 64 MB, and 8 MB are estimated to have a price change of 76.64, -9.77, 77.44, -1467.04, -51.39, -50.81, -76.47, -9.61, 389.97, 38.11, 67.62, -1459.80, and 68.89 respectively, compared to the reference category, holding all other variables constant.
 
-Storage: Devices that have the storage, 128 GB, 16GB, 16MB, 2MB, 256GB, 32GB, 4GB, 4MB, 512GB, 64GB, and 8GB are estimated to have a price change of -1133.22, -1325.12, -62.46, -1520.39, -881.32, -1232.93, -1425.61, -1528.50, -428.66, -1131.69, and -1377.18 respectively, compared to the reference category, holding all other variables constant. 
+Storage: Devices that have the storage, 128 GB, 16GB, 16MB, 2MB, 256GB, 32GB, 4GB, 4MB, 512GB, 64GB, and 8GB are estimated to have a price change of -1133.22, -1325.12, -62.46, -1520.39, -881.32, -1232.93, -1425.61, -1528.50, -428.66, -1131.69, and -1377.18 respectively, compared to the reference category, holding all other variables constant.
 
-Rating: For every one-unit increase in rating, the price is estimated to increase by approximately $119.62, holding all other variables constant.
-
-
-
-
-
-
+Rating: For every one-unit increase in rating, the price is estimated to increase by approximately \$119.62, holding all other variables constant.
 
 Neural Network Model
+
 ```{r}
 nn_model <- nn_module(
   initialize = function(p, q1, q2, q3){
@@ -325,8 +315,6 @@ nn_model <- nn_module(
 
 ```
 
-
-
 ```{r}
 M <- model.matrix(price ~ 0 + . , data = df_train1)
 
@@ -342,8 +330,6 @@ fit_nn1 <- nn_model %>%
      epochs = 50, verbose = TRUE)
 ```
 
-
-
 ```{r}
 library(glmnet)
 x <- data.matrix(df %>% select(!price))
@@ -356,13 +342,11 @@ rmse(y, predict(lasso, x))
 rmse(y, predict(ridge, x))
 ```
 
-
 ```{r}
 par(mfrow=c(1, 2))
 plot(lasso)
 plot(ridge)
 ```
-
 
 ```{r}
 rmse(df$price, lm_fit$fitted.values)
@@ -378,9 +362,6 @@ rmse(df$price, predict(forward))
 rmse(df$price, predict(backward))
 ```
 
-
-
-
 ```{r}
 rmse(df2$original_price, predict(lm_fit2))
 ```
@@ -388,8 +369,3 @@ rmse(df2$original_price, predict(lm_fit2))
 ```{r}
 
 ```
-
-
-
-
-
