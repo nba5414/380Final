@@ -416,12 +416,31 @@ backward2rmse <- rmse(df2$original_price, predict(backward2))
 
 Neural Network:
 
+
+Neural Network:
+
+
+```{r}
+normalize <- function(x) {
+  (x - min(x)) / (max(x) - min(x))
+}
+
+df_normalized <- df %>%
+  mutate(price = normalize(price)) 
+
+df2_normalized <- df2 %>%
+  mutate(original_price = normalize(original_price))
+  
+
+```
+
+
 ```{r}
 #| echo: false
 nn_model <- nn_module(
   initialize = function(p, q1, q2, q3){
     self$hidden1 <- nn_linear(p,q1)
-    self$hidden2 <- nn_linear(q1, q2)
+    self$hidden2 <- nn_linear(q1,q2)
     self$hidden3 <- nn_linear(q2,q3)
     self$output <- nn_linear(q3,1)
     self$activation <- nn_relu()
@@ -439,46 +458,78 @@ nn_model <- nn_module(
 
 ```{r}
 #| echo: false
-M1 <- model.matrix(price ~ 0 + . , data = df)
+M1 <- model.matrix(price ~ 0 + . , data = df_normalized)
 
 nn1 <- nn_model %>% 
     setup(loss = nn_mse_loss(),
         optimizer = optim_adam, 
-    set_hparams(p = ncol(M1), q1 = 16, q2 = 32, q3 = 16),
-    set_opt_hparams(lr = 0.02),
+       %>%
+    set_hparams(p = ncol(M1), q1 = 16, q2 = 32, q3 = 16) %>%
+    set_opt_hparams(lr = 0.05) %>%
+
+
     fit(data = list(
-        model.matrix(price ~ 0 + ., data = df), df %>% select(price) %>% as.matrix
+        model.matrix(price ~ 0 + ., data = df_normalized), df_normalized %>% select(price) %>% as.matrix
     ),
-     epochs = 50, verbose = TRUE))
+     epochs = 50, verbose = TRUE)
 
+```
+
+
+```{r}
+
+unnormalize <- function(x){
+  x <- x * (max(df2$original_price) - min(df2$original_price)) +  min(df2$original_price)
+  return(x)
+}
+  
+
+```
+
+
+```{r}
+#| echo: false
+nnrmse1 <- rmse(df_normalized$price, predict(nn1, model.matrix(price ~ 0 + ., data = df_normalized))) %>% as.double()
 ```
 
 ```{r}
 #| echo: false
-nnrmse1 <- rmse(df$price, predict(nn1, model.matrix(price ~ 0 + ., data = df))) %>% as.double()
-```
-
-```{r}
-#| echo: false
-M2 <- model.matrix(original_price ~ 0 + . , data = df2)
+M2 <- model.matrix(normalize(original_price) ~ 0 + . , data = df2)
 
 nn2 <- nn_model %>% 
     setup(loss = nn_mse_loss(),
         optimizer = optim_adam, 
         metrics = list(luz_metric_accuracy())) %>%
     set_hparams(p = ncol(M2), q1 = 16, q2 = 32, q3 = 16) %>%
-    set_opt_hparams(lr = 0.005) %>%
+    set_opt_hparams(lr = 0.05) %>%
     fit(data = list(
-        model.matrix(original_price ~ 0 + ., data = df2), df2 %>% select(original_price) %>% as.matrix
+        model.matrix(original_price ~ 0 + ., data = df2_normalized), df2_normalized %>% select(original_price) %>% as.matrix
     ),
      epochs = 50, verbose = TRUE)
 ```
 
 ```{r}
 #| echo: false
-nnrmse2 <- rmse(df2$original_price, predict(nn2, model.matrix(original_price ~ 0 + ., data = df2))) %>% as.double()
+
+
+nnrmse2 <- rmse(df2_normalized$original_price, predict(nn2, model.matrix(original_price ~ 0 + ., data = df2_normalized))) %>% as.double()
+
+
 ```
 
+Interpretting Normalized RMSE: 
+
+```{r}
+price_diff1<- nnrmse1 * mean(df$price)
+price_diff2<- nnrmse2 * mean(df2$original_price)
+print(price_diff1)
+print(price_diff2)
+
+
+```
+
+
+Normalizing our price column leads to a different interpretation of our neural network's RMSE. On average, our first data set's model is off by about 10%. This means price can be off between +- $34.66. The best performing model by far. For our second data set, the normalized rmse is .221. This means on average, the second data set's model is off by 22.1%. Thus, price can be off by between +- $68.01. Another good model in relation to the others!
 
 
 # Quantitative results
@@ -488,11 +539,10 @@ As stated before, we judged the models by assessing the root mean squared error 
 
 ```{r}
 #| echo: false
-summary_table <- data.frame(Model = c('Linear', 'Lasso', 'Ridge', 'Forwards', 'Backwards', 'NNetwork', 'Linear', 'Lasso', 'Ridge', 'Forwards', 'Backwards', 'NNetwork'), Dataset = c(1,1,1,1,1,1,2,2,2,2,2,2), RMSE = c(linear1rmse, lasso1rmse, ridge1rmse, forward1rmse, backward1rmse, nnrmse1, linear2rmse, lasso2rmse, ridge2rmse, forward2rmse, backward2rmse, nnrmse2))
+summary_table <- data.frame(Model = c('Linear', 'Lasso', 'Ridge', 'Forwards', 'Backwards', 'NNetwork(normalized)', 'Linear', 'Lasso', 'Ridge', 'Forwards', 'Backwards', 'NNetwork(normalized)'), Dataset = c(1,1,1,1,1,1,2,2,2,2,2,2), RMSE = c(linear1rmse, lasso1rmse, ridge1rmse, forward1rmse, backward1rmse, nnrmse1, linear2rmse, lasso2rmse, ridge2rmse, forward2rmse, backward2rmse, nnrmse2))
 
 summary_table
 ```
-
 
 # Qualitative results
 
