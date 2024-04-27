@@ -255,15 +255,19 @@ sqrt(mean((y - yhat)^2))
 }
 ```
 
-### Model Creation: Predicting Price
+# Architecture
 
-To start with our introductory model, we have decided on a multi-linear regression model. This will set a foundation for the model complex models all predicting price. In the future, we plan to extend apon this will stepwise regression, and a neural network.
+The models we used to predict price were linear regression models, lasso and ridge models, stepwise regression models, and neural networks.  We fitted each of those models to both data sets.  We judged the accuracy of our models by calculating the root mean squared error for each.
 
-# Split Test and Train Data:
+Our baseline model was a simple linear regression model which we will discuss more in the next section.
 
-======= \### Model Creation: Predicting Price
+Some interesting intermediate models we used were stepwise, lasso, and ridge regression models.  We used both forwards and backwards stepwise regression starting with a null model and a full model respectively. We used the glmnet library to get out lasso and ridge models.  These models introduced regularization.  
 
-To start with our introductory model, we have decided on a multi-linear regression model. This will set a foundation for the more complex models all predicting price. In the future, we plan to extend apon this will stepwise regression and a neural network.
+Our final model was a neural network with three hidden layers.  We used 16 nodes for the first layer, 32 for the second, and 16 for the third when we fitted the models to each dataset.  We set the the optimizer as optim_adam and had a learning rate of 0.02
+
+# Baseline Model
+
+To start with our introductory model, we have decided on a multi-linear regression model. This will set a foundation for the more complex models all predicting price. 
 
 Fit Two Linear Regression Models:
 
@@ -289,8 +293,7 @@ Initial Thoughts:
 
 We would expect to see price increase as the newer specs for phones are released and are put onto the market. Thus, we would expect things like memory, storage, ram, and other specs to be significant predictors for both of our data sets. As we can see this is the true.
 
-One noteworthy observation we noticed in both models in the high level of Adjusted R-Squared(.85 and .75). This can indicate over fitting, or it can indicator an accurate model. This will need to be verified on the test data with some prediction tests after our interpretations.
-
+One noteworthy observation we noticed in both models in the high level of Adjusted R-Squared(.85 and .75). This can indicate over fitting, or it can indicator an accurate model. 
 Interpreting our coefficients:
 
 For the first model,
@@ -347,7 +350,7 @@ print(mean(df2$original_price))
 
 ```
 
-As you see, we have a RMSE of 98.6 and 165.5 for both data sets respectively. On average, this means our model is off by about \$98.6 and \$165.5. Since the average price of the phones is around \$345.50 and \$319.88, our model is not too inaccurate, but it can be improved.
+As you see, we have a RMSE of 98.6 and 165.5 for both data sets respectively. On average, this means our model is off by about \$98.6 and \$165.5. Since the average price of the phones is around \$345.50 and \$319.88.
 
 The RMSE variation is likely caused by the heavy right-skewness in the price variable of more expensive phones. More expensive prices leads to an exponential decay of more expensive components in a thinner market; thus, leading to an exponentially distribution price vector column.
 
@@ -441,13 +444,12 @@ M1 <- model.matrix(price ~ 0 + . , data = df)
 nn1 <- nn_model %>% 
     setup(loss = nn_mse_loss(),
         optimizer = optim_adam, 
-        metrics = list(luz_metric_accuracy())) %>%
-    set_hparams(p = ncol(M1), q1 = 16, q2 = 32, q3 = 16) %>%
-    set_opt_hparams(lr = 0.005) %>%
+    set_hparams(p = ncol(M1), q1 = 16, q2 = 32, q3 = 16),
+    set_opt_hparams(lr = 0.02),
     fit(data = list(
         model.matrix(price ~ 0 + ., data = df), df %>% select(price) %>% as.matrix
     ),
-     epochs = 50, verbose = TRUE)
+     epochs = 50, verbose = TRUE))
 
 ```
 
@@ -477,7 +479,12 @@ nn2 <- nn_model %>%
 nnrmse2 <- rmse(df2$original_price, predict(nn2, model.matrix(original_price ~ 0 + ., data = df2))) %>% as.double()
 ```
 
-Summary of results
+
+
+# Quantitative results
+
+As stated before, we judged the models by assessing the root mean squared error for each.  We chose this method because we are working with regression models.  We did not use any form of cross validation because we were running into errors.  Because both data sets include factors columns with a lot of levels, the testing data was giving the models levels that were not included in the training data.   
+
 
 ```{r}
 #| echo: false
@@ -485,3 +492,18 @@ summary_table <- data.frame(Model = c('Linear', 'Lasso', 'Ridge', 'Forwards', 'B
 
 summary_table
 ```
+
+
+# Qualitative results
+
+
+
+# Discussion
+
+
+
+# Ethical Considerations 
+
+There are clear limitations to the model.  For one, the first dataset used in the creation of these models is smaller with about 500 rows, which can greatly limit how effective models can be in terms of efficiency and accuracy.  For the second dataset, there are only four predictor variables for the price after cleaning the dataset, which can also limit the extent of how efficient a model can be because it is not considering all aspects that may contribute to the price of a phone.  As stated earlier, cross validation was not possible to perform on this group of data, so we were not able to fully test the accuracy of the models as well as detect any possible overfitting.
+
+
