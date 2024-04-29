@@ -414,7 +414,6 @@ forward2rmse <- rmse(df2$original_price, predict(forward2))
 backward2rmse <- rmse(df2$original_price, predict(backward2))
 ```
 
-Neural Network:
 
 
 Neural Network:
@@ -463,11 +462,9 @@ M1 <- model.matrix(price ~ 0 + . , data = df_normalized)
 nn1 <- nn_model %>% 
     setup(loss = nn_mse_loss(),
         optimizer = optim_adam, 
-       %>%
+        metrics = list(luz_metric_accuracy())) %>%
     set_hparams(p = ncol(M1), q1 = 16, q2 = 32, q3 = 16) %>%
     set_opt_hparams(lr = 0.05) %>%
-
-
     fit(data = list(
         model.matrix(price ~ 0 + ., data = df_normalized), df_normalized %>% select(price) %>% as.matrix
     ),
@@ -546,6 +543,61 @@ summary_table
 
 # Qualitative results
 
+```{r}
+#| echo: false
+df_test <- df
+
+
+iphone13 <- c(599, 86, 2.65, '4 GB', 3227, 12, 'iOS v15.0', 6.1, 120)
+motogstylus <- c(176, 86, 1.8, '4 GB', 5000, 16, 'Android v11', 6.8, 120)
+pixel <- c(199, 88, 1.6, '4 GB', 2770, 12.3, 'Android v10', 5.0, 60)
+df_ex1 <- rbind(df_test, iphone13, motogstylus, pixel)
+
+df_ex1$price <- as.numeric(df_ex1$price)
+df_ex1$battery_mAh <- as.numeric(df_ex1$battery_mAh)
+df_ex1$rating <- as.numeric(df_ex1$rating)
+df_ex1$`processor GHz)` <- as.numeric(df_ex1$`processor GHz)`)
+df_ex1$f_camera_MP <- as.numeric(df_ex1$f_camera_MP)
+df_ex1$displaySize <- as.numeric(df_ex1$displaySize)
+df_ex1$displayHz <- as.numeric(df_ex1$displayHz)
+
+df_ex1_n <- df_ex1  %>% mutate(price = normalize(price))
+
+p_ex1 <- predict(nn1, newdata = model.matrix(price ~ 0 + ., data = df_ex1_n)) %>% as.double
+
+
+
+```
+
+
+These are the normalized price predictions for the phone 13, motog stylus, and the google pixel.
+
+```{r}
+p_ex1[507:509]
+```
+
+```{r}
+#| echo: false
+iphone15 <- c('apple', '6 GB', '128 GB', 4.6, 799)
+samsung_s24 <- c('samsung', '12 GB', '256 GB', 4.5, 1400)
+vivoy18 <- c('vivo', '8 GB', '256 GB', 4.0, 107.87)
+
+df_ex2 <- rbind(df2, iphone15, samsung_s24, vivoy18)
+df_ex2$rating <- as.numeric(df_ex2$rating)
+df_ex2$original_price <- as.numeric(df_ex2$original_price)
+
+df_ex2_n <- df_ex2  %>% mutate(original_price = normalize(original_price))
+
+p_ex2 <- predict(nn2, newdata = model.matrix(original_price ~ 0 + ., data = df_ex2_n)) %>% as.double
+
+```
+
+
+These are the normalized price predictions for the iphone 15, samsung s24 ultra, and vivo y18.
+
+```{r}
+p_ex2[2898:2900]
+```
 
 
 # Discussion
