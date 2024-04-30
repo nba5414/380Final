@@ -366,7 +366,6 @@ Lasso and Ridge:
 
 ```{r}
 #| echo: false
-library(glmnet)
 x1 <- data.matrix(df %>% select(!price))
 y1 <- df$price
 x2 <- data.matrix(df2 %>% select(!original_price))
@@ -430,7 +429,6 @@ df_normalized <- df %>%
 df2_normalized <- df2 %>%
   mutate(original_price = normalize(original_price))
   
-
 ```
 
 
@@ -474,17 +472,6 @@ nn1 <- nn_model %>%
 
 
 ```{r}
-
-unnormalize <- function(x){
-  x <- x * (max(df2$original_price) - min(df2$original_price)) +  min(df2$original_price)
-  return(x)
-}
-  
-
-```
-
-
-```{r}
 #| echo: false
 nnrmse1 <- rmse(df_normalized$price, predict(nn1, model.matrix(price ~ 0 + ., data = df_normalized))) %>% as.double()
 ```
@@ -514,15 +501,14 @@ nnrmse2 <- rmse(df2_normalized$original_price, predict(nn2, model.matrix(origina
 
 ```
 
-Interpretting Normalized RMSE: 
+Interpreting Normalized RMSE: 
 
 ```{r}
+#| echo: false
 price_diff1<- nnrmse1 * mean(df$price)
 price_diff2<- nnrmse2 * mean(df2$original_price)
 print(price_diff1)
 print(price_diff2)
-
-
 ```
 
 
@@ -565,14 +551,13 @@ df_ex1_n <- df_ex1  %>% mutate(price = normalize(price))
 
 p_ex1 <- predict(nn1, newdata = model.matrix(price ~ 0 + ., data = df_ex1_n)) %>% as.double
 
-
-
 ```
 
 
 These are the normalized price predictions for the phone 13, motog stylus, and the google pixel.
 
 ```{r}
+#| echo: false
 p_ex1[507:509]
 ```
 
@@ -596,6 +581,7 @@ p_ex2 <- predict(nn2, newdata = model.matrix(original_price ~ 0 + ., data = df_e
 These are the normalized price predictions for the iphone 15, samsung s24 ultra, and vivo y18.
 
 ```{r}
+#| echo: false
 p_ex2[2898:2900]
 ```
 
@@ -604,8 +590,322 @@ p_ex2[2898:2900]
 
 
 
+
+
+
 # Ethical Considerations 
 
 There are clear limitations to the model.  For one, the first dataset used in the creation of these models is smaller with about 500 rows, which can greatly limit how effective models can be in terms of efficiency and accuracy.  For the second dataset, there are only four predictor variables for the price after cleaning the dataset, which can also limit the extent of how efficient a model can be because it is not considering all aspects that may contribute to the price of a phone.  As stated earlier, cross validation was not possible to perform on this group of data, so we were not able to fully test the accuracy of the models as well as detect any possible overfitting.
+
+
+
+# Appendix
+
+Loading in data:
+```{r}
+library(glmnet)
+library(readxl)
+library(tidyverse)
+library(corrplot)
+library(torch)
+library(luz)
+library(dplyr)
+library(broom)
+library(purrr)
+library(caret)
+library(tibble)
+
+
+
+df <- read_excel('smartphones_-_smartphones.xlsx')
+df2 <- read_csv('Sales.csv')
+```
+
+
+Cleaning First Data set:
+```{r}
+df <- df %>% drop_na() %>% select(!model) %>% select(!sim)
+
+df <- df %>% 
+  mutate(battery = gsub(pattern = "mAh Battery|with|(?:[0-9]){1,3}W|Fast Charging", replacement = "", battery)) %>% mutate_at('battery', as.numeric) %>% drop_na() %>% rename('battery_mAh'='battery')
+
+df$processor <- str_extract(df$processor, "\\d+\\.?\\d*\\s*GHz|\\d+\\s*GHz")
+df$processor <- gsub("GHz", "", df$processor)
+df <- df %>% drop_na() %>% mutate_at('processor', as.numeric) %>%rename('processor GHz)'='processor')
+head(df)
+
+for (i in 1:nrow(df)){
+  if (df[i,9] == 'No FM Radio'){
+    df[i,9] <- df[i,8]
+  }
+  else if (df[i,9] == 'Bluetooth'){
+    df[i,9] <- df[i,8]
+  }
+}
+df <- df %>% select(!card) %>% mutate_at('os', as.factor)
+
+df$camera <- str_extract(df$camera, '[0-9]{1,2} MP Front Camera')
+df$camera <- str_extract(df$camera, '[0-9]{1,2}')
+df <- df %>% mutate_at('camera', as.numeric) %>% rename('f_camera_MP'='camera') %>% drop_na()
+
+df$ram <- str_extract(df$ram, '[0-9]{1,2} GB')
+df <- df %>% mutate_at('ram', as.factor) 
+
+df <- df %>% mutate(displaySize = as.numeric(str_extract(df$display, "\\b\\d+\\.\\d+\\b")))
+df <- df %>% mutate(displayHz = as.numeric(str_extract(df$display, "\\b\\d+(?=\\s*Hz)")))
+df <- df %>% select(!display)
+
+df <- df %>%
+  mutate(price = gsub(",", "", price))
+df$price <- sub("\\₹", "", df$price)
+df$price <- as.numeric(df$price)
+df <- df %>%
+  mutate(price = round(price / 83.41, digits = 2)) %>% rename('price'='price') %>% drop_na()
+```
+
+
+Cleaning second Data set:
+```{r}
+df2 <- df2 %>% drop_na()
+
+df2 <- df2[,-c(2,3,6,8,10,11,12)]
+
+names(df2) <- tolower(names(df2))
+
+df2$brands <- tolower(df2$brands)
+
+df2<- rename(df2, original_price = "original price")
+
+df2 <- df2 %>% mutate(original_price = df2$original_price * 0.012)
+
+df2$memory <- as.factor(df2$memory)
+
+df2$storage <- as.factor(df2$storage)
+
+df2$brands <- as.factor(df2$brands)
+```
+
+
+First two linear regression models
+```{r}
+lm1 <- lm(price ~ ., data = df)
+lm2 <- lm(original_price ~ ., data = df2)
+
+summary1 <- summary(lm1)
+summary2 <- summary(lm2)
+
+print(summary1)
+print(summary2)
+```
+
+```{r}
+linear1rmse <- rmse(df$price, lm1$fitted.values)
+print(linear1rmse)
+linear2rmse <- rmse(df2$original_price, lm2$fitted.values)
+print(linear2rmse)
+
+print(mean(df$price))
+print(mean(df2$original_price))
+```
+
+
+Histograms:
+```{r}
+histogram(df$price, main = "Boxplot of Price Variable(Df1)")
+
+histogram(df2$original_price, main = "Boxplot of Continuous Variable(DF2)")
+```
+
+
+Lasso and Ridge:
+```{r}
+x1 <- data.matrix(df %>% select(!price))
+y1 <- df$price
+x2 <- data.matrix(df2 %>% select(!original_price))
+y2 <- df2$original_price
+
+lasso1 <- cv.glmnet(x1, y1, alpha = 1)
+ridge1 <- cv.glmnet(x1, y1, alpha = 0)
+lasso2 <- cv.glmnet(x2, y2, alpha = 1)
+ridge2 <- cv.glmnet(x2, y2, alpha = 0)
+
+lasso1rmse <- rmse(y1, predict(lasso1, x1))
+ridge1rmse <- rmse(y1, predict(ridge1, x1))
+lasso2rmse <- rmse(y2, predict(lasso2, x2))
+ridge2rmse <- rmse(y2, predict(ridge2, x2))
+```
+
+
+Stepwise:
+```{r}
+#| echo: false
+null_model1 <- lm(price ~ 1, df)
+forward1 <- step(null_model1, direction = 'forward', scope = formula(lm1))
+
+null_model2 <- lm(original_price ~ 1, df2)
+forward2 <- step(null_model2, direction = 'forward', scope = formula(lm2))
+
+
+backward1 <- step(lm1, direction = 'backward')
+backward2 <- step(lm2, direction = 'backward')
+
+
+forward1rmse <- rmse(df$price, predict(forward1))
+backward1rmse <- rmse(df$price, predict(backward1))
+forward2rmse <- rmse(df2$original_price, predict(forward2))
+backward2rmse <- rmse(df2$original_price, predict(backward2))
+```
+
+
+Normalization Function:
+```{r}
+normalize <- function(x) {
+  (x - min(x)) / (max(x) - min(x))
+}
+
+df_normalized <- df %>%
+  mutate(price = normalize(price)) 
+
+df2_normalized <- df2 %>%
+  mutate(original_price = normalize(original_price))
+  
+```
+
+
+Setting up NNetwork:
+```{r}
+#| echo: false
+nn_model <- nn_module(
+  initialize = function(p, q1, q2, q3){
+    self$hidden1 <- nn_linear(p,q1)
+    self$hidden2 <- nn_linear(q1,q2)
+    self$hidden3 <- nn_linear(q2,q3)
+    self$output <- nn_linear(q3,1)
+    self$activation <- nn_relu()
+  },
+  forward = function(x){
+    x %>%
+      self$hidden1() %>% self$activation() %>%
+      self$hidden2() %>% self$activation() %>%
+      self$hidden3() %>% self$activation() %>%
+      self$output()
+  }
+)
+
+```
+
+
+Fitting Neural Network
+```{r}
+#| echo: false
+M1 <- model.matrix(price ~ 0 + . , data = df_normalized)
+
+nn1 <- nn_model %>% 
+    setup(loss = nn_mse_loss(),
+        optimizer = optim_adam, 
+        metrics = list(luz_metric_accuracy())) %>%
+    set_hparams(p = ncol(M1), q1 = 16, q2 = 32, q3 = 16) %>%
+    set_opt_hparams(lr = 0.05) %>%
+    fit(data = list(
+        model.matrix(price ~ 0 + ., data = df_normalized), df_normalized %>% select(price) %>% as.matrix
+    ),
+     epochs = 50, verbose = TRUE)
+
+```
+
+```{r}
+#| echo: false
+nnrmse1 <- rmse(df_normalized$price, predict(nn1, model.matrix(price ~ 0 + ., data = df_normalized))) %>% as.double()
+```
+
+```{r}
+#| echo: false
+M2 <- model.matrix(normalize(original_price) ~ 0 + . , data = df2)
+
+nn2 <- nn_model %>% 
+    setup(loss = nn_mse_loss(),
+        optimizer = optim_adam, 
+        metrics = list(luz_metric_accuracy())) %>%
+    set_hparams(p = ncol(M2), q1 = 16, q2 = 32, q3 = 16) %>%
+    set_opt_hparams(lr = 0.05) %>%
+    fit(data = list(
+        model.matrix(original_price ~ 0 + ., data = df2_normalized), df2_normalized %>% select(original_price) %>% as.matrix
+    ),
+     epochs = 50, verbose = TRUE)
+```
+
+```{r}
+#| echo: false
+nnrmse2 <- rmse(df2_normalized$original_price, predict(nn2, model.matrix(original_price ~ 0 + ., data = df2_normalized))) %>% as.double()
+```
+
+
+Interpreting Normalized RMSE: 
+```{r}
+price_diff1<- nnrmse1 * mean(df$price)
+price_diff2<- nnrmse2 * mean(df2$original_price)
+print(price_diff1)
+print(price_diff2)
+```
+
+
+Summary Table:
+```{r}
+summary_table <- data.frame(Model = c('Linear', 'Lasso', 'Ridge', 'Forwards', 'Backwards', 'NNetwork(normalized)', 'Linear', 'Lasso', 'Ridge', 'Forwards', 'Backwards', 'NNetwork(normalized)'), Dataset = c(1,1,1,1,1,1,2,2,2,2,2,2), RMSE = c(linear1rmse, lasso1rmse, ridge1rmse, forward1rmse, backward1rmse, nnrmse1, linear2rmse, lasso2rmse, ridge2rmse, forward2rmse, backward2rmse, nnrmse2))
+
+summary_table
+```
+
+
+Qualitative results:
+```{r}
+df_test <- df
+
+
+iphone13 <- c(599, 86, 2.65, '4 GB', 3227, 12, 'iOS v15.0', 6.1, 120)
+motogstylus <- c(176, 86, 1.8, '4 GB', 5000, 16, 'Android v11', 6.8, 120)
+pixel <- c(199, 88, 1.6, '4 GB', 2770, 12.3, 'Android v10', 5.0, 60)
+df_ex1 <- rbind(df_test, iphone13, motogstylus, pixel)
+
+df_ex1$price <- as.numeric(df_ex1$price)
+df_ex1$battery_mAh <- as.numeric(df_ex1$battery_mAh)
+df_ex1$rating <- as.numeric(df_ex1$rating)
+df_ex1$`processor GHz)` <- as.numeric(df_ex1$`processor GHz)`)
+df_ex1$f_camera_MP <- as.numeric(df_ex1$f_camera_MP)
+df_ex1$displaySize <- as.numeric(df_ex1$displaySize)
+df_ex1$displayHz <- as.numeric(df_ex1$displayHz)
+
+df_ex1_n <- df_ex1  %>% mutate(price = normalize(price))
+
+p_ex1 <- predict(nn1, newdata = model.matrix(price ~ 0 + ., data = df_ex1_n)) %>% as.double
+```
+
+```{r}
+p_ex1[507:509]
+```
+
+```{r}
+iphone15 <- c('apple', '6 GB', '128 GB', 4.6, 799)
+samsung_s24 <- c('samsung', '12 GB', '256 GB', 4.5, 1400)
+vivoy18 <- c('vivo', '8 GB', '256 GB', 4.0, 107.87)
+
+df_ex2 <- rbind(df2, iphone15, samsung_s24, vivoy18)
+df_ex2$rating <- as.numeric(df_ex2$rating)
+df_ex2$original_price <- as.numeric(df_ex2$original_price)
+
+df_ex2_n <- df_ex2  %>% mutate(original_price = normalize(original_price))
+
+p_ex2 <- predict(nn2, newdata = model.matrix(original_price ~ 0 + ., data = df_ex2_n)) %>% as.double
+
+```
+
+```{r}
+p_ex2[2898:2900]
+```
+
+
+
+
+
 
 
