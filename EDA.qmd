@@ -408,6 +408,7 @@ Neural Network:
 
 
 ```{r}
+#| echo: false
 normalize <- function(x) {
   (x - min(x)) / (max(x) - min(x))
 }
@@ -734,7 +735,6 @@ ridge2rmse <- rmse(y2, predict(ridge2, x2))
 
 Stepwise:
 ```{r}
-#| echo: false
 null_model1 <- lm(price ~ 1, df)
 forward1 <- step(null_model1, direction = 'forward', scope = formula(lm1))
 
@@ -770,7 +770,6 @@ df2_normalized <- df2 %>%
 
 Setting up NNetwork:
 ```{r}
-#| echo: false
 nn_model <- nn_module(
   initialize = function(p, q1, q2, q3){
     self$hidden1 <- nn_linear(p,q1)
@@ -793,7 +792,6 @@ nn_model <- nn_module(
 
 Fitting Neural Network
 ```{r}
-#| echo: false
 M1 <- model.matrix(price ~ 0 + . , data = df_normalized)
 
 nn1 <- nn_model %>% 
@@ -810,12 +808,10 @@ nn1 <- nn_model %>%
 ```
 
 ```{r}
-#| echo: false
 nnrmse1 <- rmse(df_normalized$price, predict(nn1, model.matrix(price ~ 0 + ., data = df_normalized))) %>% as.double()
 ```
 
 ```{r}
-#| echo: false
 M2 <- model.matrix(normalize(original_price) ~ 0 + . , data = df2)
 
 nn2 <- nn_model %>% 
@@ -831,7 +827,6 @@ nn2 <- nn_model %>%
 ```
 
 ```{r}
-#| echo: false
 nnrmse2 <- rmse(df2_normalized$original_price, predict(nn2, model.matrix(original_price ~ 0 + ., data = df2_normalized))) %>% as.double()
 ```
 
