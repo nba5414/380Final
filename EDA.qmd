@@ -200,7 +200,7 @@ head(df2)
 
 It is also a tabular data set with information on mobile phones. This data set differs from the first because it has less columns that are useful for predicting price but it has more rows.
 
-### Cleaning P1
+### Cleaning P2
 
 To start we removed unneeded columns. These were models, Camera, selling price, mobile, discount, and discount percentage. We then make all the column names lowercase. We then made all the data in the colors and brands columns lowercase. We then removed the underscore from the original_price column name. We then converted the price to dollars. We them made the memory, brands, and storage columns factors.
 
@@ -294,9 +294,10 @@ Initial Thoughts:
 We would expect to see price increase as the newer specs for phones are released and are put onto the market. Thus, we would expect things like memory, storage, ram, and other specs to be significant predictors for both of our data sets. As we can see this is the true.
 
 One noteworthy observation we noticed in both models in the high level of Adjusted R-Squared(.85 and .75). This can indicate over fitting, or it can indicator an accurate model. 
-Interpreting our coefficients:
 
-For the first model,
+
+Here are some example interpretations for the first model:
+
 
 Intercept: When all other predictor variables are zero, the estimated price of the product is approximately -\$5.080e+02.
 
@@ -304,24 +305,13 @@ Rating: For every one-unit increase in the rating, the price is estimated to inc
 
 Processor(GHz): For every one-unit increase in the processor GHz, the price is estimated to increase by approximately \$1.423e+02, holding all other variables constant.
 
-RAM(16GB): Phones with 16GB of RAM are estimated to have a price increase of approximately \$4.169e+01 compared to the reference category, holding all other variables constant.
 
-RAM(18GB): Phones with 18GB of RAM are estimated to have a price increase of approximately \$3.340e+02 compared to the reference category, holding all other variables constant.
-
-RAM(3GB): Phones with 3GB of RAM are estimated to have a price increase of approximately \$7.775e+01 compared to the reference category, holding all other variables constant.
-
-RAM(4GB): Phones with 4GB of RAM are estimated to have a price decrease of approximately \$5.905e+01 compared to the reference category, holding all other variables constant.
-
-RAM(6GB): Phones with 6GB of RAM are estimated to have a price decrease of approximately \$1.195e+02 compared to the reference category, holding all other variables constant.
-
-Ram(8GB): Phones with 6GB of RAM are estimated to have a price decrease of approximately \$9.567e+01 compared to the reference category, holding all other variables constant.
 
 Battery(mAH): For every one-unit increase in battery mAh, the price is estimated to decrease by approximately \$4.114e-04, holding all other variables constant.
 
 Camera(MP): For every one-unit increase in front camera megapixels, the price is estimated to decrease by approximately \$2.566, holding all other variables constant.
 
-Operating System: Devices with Android v10.0: On average, devices with Android v10.0 have prices that are \$22.38 higher than the reference category, holding all other variables constant. Android v11: On average, devices with Android v11 have prices that are \$82.11 lower than the reference category, holding all other variables constant. Android v12: On average, devices with Android v12 have prices that are \$69.65 lower than the reference category, holding all other variables constant. Android v13: On average, devices with Android v13 have prices that are \$58.58 lower than the reference category, holding all other variables constant. EMUI v12: On average, devices with EMUI v12 have prices that are \$80.82 lower than the reference category, holding all other variables constant. Harmony v2.0: On average, devices with Harmony v2.0 have prices that are \$140.50 lower than the reference category, holding all other variables constant. HarmonyOS: On average, devices with HarmonyOS have prices that are \$87.34 higher than the reference category, holding all other variables constant. HarmonyOS v2.0: On average, devices with HarmonyOS v2.0 have prices that are \$15.82 lower than the reference category, holding all other variables constant. Hongmeng OS v3.0: On average, devices with Hongmeng OS v3.0 have prices that are \$2303 higher than the reference category, holding all other variables constant. Hongmeng OS v4.0: On average, devices with Hongmeng OS v4.0 have prices that are \$662.20 higher than the reference category, holding all other variables constant. iOS v15 and iOS v15.0: On average, devices with iOS v15 have prices that are \$1266 higher than the reference category, and devices with iOS v15.0 have prices that are \$998.20 higher than the reference category, holding all other variables constant.
-
+Operating System: Devices with Android v10.0: On average, devices with Android v10.0 have prices that are \$22.38 higher than the reference category, holding all other variables constant. 
 Display size: For every one-unit increase in display size, the price is estimated to decrease by approximately \$1.389e+02, holding all other variables constant.
 
 Display Hz: For every one-unit increase in display size, the price is estimated to decrease by approximately \$1.487, holding all other variables constant.
@@ -332,7 +322,6 @@ Operating System: Phones of the brands ASUS, Gionee, Google Pixel, HTC, Infinix,
 
 Memory: Phones with RAM memory capacity of 1.5GB, 10MB, 100 MB, 12GB, 128MB, 153MB, 16GB, 16 MB, 2GB, 2MB, 3GB, 30MB, 32MB, 4GB, 46MB, 4G, 512MB, 6GB, 64MB, 768MB, 8GB, and 8MB have an estimated price change of -7.67,-15.23,-61.86, 469.00, -18.25, -1309.63, 731.42, -9.39, -4.51, -1.56, 64.78, 49.61, 3.63, 143.76, 5.76, -11.06, 259.28, -11.84, 203.96, 8.72, -22.95, 271.17, and 13.27 respectively in dollars compared to the reference category holding all other variables constant.
 
-Storage: Phones with storage capacity of 10MB, 100MB, 128GB, 128MB, 129GB, 130GB, 140MB, 153MB, 16GB, 16MB, 2MB, 256GB, 256MB, 32GB, 4GB, 4Mb, 512GB, 512MB, 64GB, 64MB, 8 GB, and 8 MB have an estimated price change of -1211.90, -1301.45, 1133.10,-1238.42, -1180.07, -1168.48, -1172.08, NULL(due to multicollinearity), 1160.44, -1227.40, -1299.06, 892.08, -1144.20, 1158.03, 1196.87, -1260.41, 392.65, -1224.56, 1176.79, -1225.13, 1186.76, and -1265.87 respectively in dollars when compared to the reference category holding all other predictors constant. Rating: For every one unit increase in rating we see a price change of \$64.97 when holding all other predictors constant.
 
 Rating: For every one-unit increase in rating, the price is estimated to increase by approximately \$119.62, holding all other variables constant.
 
@@ -588,14 +577,21 @@ p_ex2[2898:2900]
 
 # Discussion
 
+The journey of our predictive model development came with many unexpected challenges and barriers imposed by the data itself, but we as a team were able to overcome these and create a clear final model to reasonably predict phone prices. 
 
+In terms of the model's performance our baseline model performed the best (disregarding the final model). Feature selection approaches like lasso, ridge, and step wise regression were not effective in lowering the average error. This is likely caused by the large amount of factors in our data set which posed a huge problem in training the data. For example, cross validation was not possible to test the data because of the large amount of column factors present in the test data but not the training. 
+
+For our final model's performance, we are pleasantly surprised with the end result. Initially, a basic neural network was not effective in predicting phone prices, but normalizing the data to improve gradient descent made our final models within 10 and 15 percent accuracy. A huge improvement regarding the other models. We think this was likely caused by the factors making the gradient descent computations saturated and inaccurate. Thus, normalizing the data improved this error margin in the training process. 
+
+Some interesting results we noticed were the lack of improvement in the feature selection models. We were not expecting feature selection to be so ineffective. On the contrary, we thought the high-dimensions of the data set caused by the factors would lead to feature selection being the most effective; however, this proved to be the opposite. High-dimensional factors caused feature selection to be completely ineffective.
+I didn't proof read this at all but lmk what you guys think on snap or in here
 
 
 
 
 # Ethical Considerations 
 
-There are clear limitations to the model.  For one, the first dataset used in the creation of these models is smaller with about 500 rows, which can greatly limit how effective models can be in terms of efficiency and accuracy.  For the second dataset, there are only four predictor variables for the price after cleaning the dataset, which can also limit the extent of how efficient a model can be because it is not considering all aspects that may contribute to the price of a phone.  As stated earlier, cross validation was not possible to perform on this group of data, so we were not able to fully test the accuracy of the models as well as detect any possible overfitting.
+There are clear limitations to the model.  For one, the first dataset used in the creation of these models is smaller with about 500 rows, which can limit how effective models can be in terms of efficiency and accuracy.  For the second dataset, there are only four predictor variables for the price after cleaning the dataset, which can also limit the extent of how efficient a model can be because it is not considering all aspects that may contribute to the price of a phone.  As stated earlier, cross validation was not possible to perform on this group of data, so we were not able to fully test the accuracy of the models as well as detect any possible overfitting.
 
 
 
