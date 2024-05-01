@@ -456,7 +456,7 @@ nn1 <- nn_model %>%
     fit(data = list(
         model.matrix(price ~ 0 + ., data = df_normalized), df_normalized %>% select(price) %>% as.matrix
     ),
-     epochs = 50, verbose = TRUE)
+     epochs = 50, verbose = F)
 
 ```
 
@@ -479,7 +479,7 @@ nn2 <- nn_model %>%
     fit(data = list(
         model.matrix(original_price ~ 0 + ., data = df2_normalized), df2_normalized %>% select(original_price) %>% as.matrix
     ),
-     epochs = 50, verbose = TRUE)
+     epochs = 50, verbose = F)
 ```
 
 ```{r}
@@ -803,7 +803,7 @@ nn1 <- nn_model %>%
     fit(data = list(
         model.matrix(price ~ 0 + ., data = df_normalized), df_normalized %>% select(price) %>% as.matrix
     ),
-     epochs = 50, verbose = TRUE)
+     epochs = 50, verbose = F)
 
 ```
 
@@ -823,7 +823,7 @@ nn2 <- nn_model %>%
     fit(data = list(
         model.matrix(original_price ~ 0 + ., data = df2_normalized), df2_normalized %>% select(original_price) %>% as.matrix
     ),
-     epochs = 50, verbose = TRUE)
+     epochs = 50, verbose = F)
 ```
 
 ```{r}
